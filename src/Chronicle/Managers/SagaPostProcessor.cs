@@ -13,9 +13,9 @@ namespace Chronicle.Managers
         {
             _log = log;
         }
-        
-        public async Task ProcessAsync<TMessage>(ISaga saga, TMessage message, ISagaContext context, 
-            Func<TMessage, ISagaContext, Task> onCompleted, Func<TMessage, ISagaContext, Task> onRejected)
+
+        public async Task ProcessAsync<TMessage>(ISaga saga, TMessage message, ISagaContext context,
+            Func<TMessage, ISagaContext, Task> onCompleted, Func<TMessage, ISagaContext, Task> onPending, Func<TMessage, ISagaContext, Task> onRejected)
         {
             var sagaType = saga.GetType();
 
@@ -25,12 +25,15 @@ namespace Chronicle.Managers
                     await onRejected(message, context);
                     await CompensateAsync(saga, sagaType, context);
                     break;
+                case SagaStates.Pending:
+                    await onPending(message, context);
+                    break;
                 case SagaStates.Completed:
                     await onCompleted(message, context);
                     break;
             }
         }
-        
+
         private async Task CompensateAsync(ISaga saga, Type sagaType, ISagaContext context)
         {
             var sagaLogs = await _log.ReadAsync(saga.Id, sagaType);
