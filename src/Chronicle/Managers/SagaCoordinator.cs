@@ -26,23 +26,26 @@ namespace Chronicle.Managers
             => ProcessAsync(message: message, onCompleted: null, onRejected: null, context: context);
 
         public async Task ProcessAsync<TMessage>(TMessage message, Func<TMessage, ISagaContext, Task> onCompleted = null,
+            Func<TMessage, ISagaContext, Task> onPending = null,
             Func<TMessage, ISagaContext, Task> onRejected = null, ISagaContext context = null) where TMessage : class
         {
             var actions = _seeker.Seek<TMessage>().ToList();
 
             Task EmptyHook(TMessage m, ISagaContext ctx) => Task.CompletedTask;
             onCompleted ??= EmptyHook;
+            onPending ??= EmptyHook;
             onRejected ??= EmptyHook;
 
             var sagaTasks = actions
-                .Select(action => ProcessAsync(message, action, onCompleted, onRejected, context))
+                .Select(action => ProcessAsync(message, action, onCompleted, onPending, onRejected, context))
                 .ToList();
-
             await Task.WhenAll(sagaTasks);
         }
 
         private async Task ProcessAsync<TMessage>(TMessage message, ISagaAction<TMessage> action,
-            Func<TMessage, ISagaContext, Task> onCompleted, Func<TMessage, ISagaContext, Task> onRejected,
+            Func<TMessage, ISagaContext, Task> onCompleted,
+            Func<TMessage, ISagaContext, Task> onPending,
+            Func<TMessage, ISagaContext, Task> onRejected,
             ISagaContext context = null) where TMessage : class
         {
             context ??= SagaContext.Empty;
@@ -59,7 +62,7 @@ namespace Chronicle.Managers
                 }
 
                 await _processor.ProcessAsync(saga, message, state, context);
-                await _postProcessor.ProcessAsync(saga, message, context, onCompleted, onRejected);
+                await _postProcessor.ProcessAsync(saga, message, context, onCompleted, onPending, onRejected);
             }
         }
     }
