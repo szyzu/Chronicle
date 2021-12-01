@@ -6,7 +6,7 @@ namespace Chronicle
     {
         public string Id { get; }
 
-        private SagaId(string id)
+        public SagaId(string id)
             => Id = id;
 
         public static implicit operator string(SagaId sagaId) => sagaId.Id;
