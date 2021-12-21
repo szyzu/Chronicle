@@ -42,7 +42,7 @@ namespace Chronicle.Integrations.Redis.Persistence
                 throw new ChronicleException($"{nameof(state)} was null.");
             }
 
-            var sagaState = new RedisSagaState(state.Id, state.Type, state.State, state.Data, state.Data.GetType());
+            var sagaState = new RedisSagaState(state.Id, state.Type, state.State, state.Data, state.Data?.GetType());
 
 
             var serializedSagaState = JsonConvert.SerializeObject(sagaState);
