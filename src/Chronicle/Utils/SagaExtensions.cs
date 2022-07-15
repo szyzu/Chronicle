@@ -12,11 +12,16 @@ namespace Chronicle.Utils
                 .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ISaga<>))
                ?.GetGenericArguments()
                 .FirstOrDefault();
-        
+
         public static object InvokeGeneric(this ISaga saga, string method, params object[] args)
-            => saga
+            => (saga
                 .GetType()
                 .GetMethod(method, args.Select(arg => arg.GetType()).ToArray())
-                ?.Invoke(saga, args);
+                ?? saga
+                    .GetType()
+                    .GetInterfaces()
+                    .Select(x=>x.GetMethod(method, args.Select(arg => arg.GetType()).ToArray()))
+                    .FirstOrDefault(x=>x != null)
+                )?.Invoke(saga, args);
     }
 }
