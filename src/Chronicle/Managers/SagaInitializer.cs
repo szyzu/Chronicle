@@ -1,4 +1,7 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Chronicle.Persistence;
 using Chronicle.Utils;
@@ -40,7 +43,21 @@ namespace Chronicle.Managers
 
             return (true, state);
         }
-        
+
+        public async Task<(ISaga saga, ISagaState state)> GetInitializedSagaAsync<TMessage>(SagaId id, IEnumerable<ISagaAction<TMessage>> actions)
+        {
+            foreach (var sagaAction in actions)
+            {
+                var state = await _repository.ReadAsync(id, sagaAction.GetType());
+                if (state != null)
+                {
+                    return ((Saga)sagaAction, state);
+                }
+            }
+
+            return (null, null);
+        }
+
         private static ISagaState CreateSagaState(SagaId id, Type sagaType, Type dataType)
         {
             var sagaData = dataType != null ? Activator.CreateInstance(dataType) : null;

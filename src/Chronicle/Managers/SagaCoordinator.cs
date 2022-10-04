@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Chronicle.Async;
@@ -35,6 +37,12 @@ namespace Chronicle.Managers
             onCompleted ??= EmptyHook;
             onPending ??= EmptyHook;
             onRejected ??= EmptyHook;
+
+            var initializedSaga = await _initializer.GetInitializedSagaAsync(context.SagaId, actions);
+            if (initializedSaga.saga != null)
+            {
+                actions = actions.Where(action => action.Equals(initializedSaga.saga)).ToList();
+            }
 
             var sagaTasks = actions
                 .Select(action => ProcessAsync(message, action, onCompleted, onPending, onRejected, context))
